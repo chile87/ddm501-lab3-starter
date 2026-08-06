@@ -115,7 +115,7 @@ jobs:
           pip install -r requirements-dev.txt
       
       - name: Train model
-        run: python scripts/train_model.py
+        run: echo y | python scripts/train_model.py
       
       - name: Run tests
         run: pytest tests/ -v --cov=app --cov-report=xml --cov-report=html

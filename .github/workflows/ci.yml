@@ -73,7 +73,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install "setuptools<70" numpy
+          pip install numpy cython
+          pip install scikit-surprise --no-build-isolation
           pip install -r requirements.txt
           pip install mypy types-requests
       
@@ -106,7 +107,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install "setuptools<70" numpy
+          pip install numpy cython
+          pip install scikit-surprise --no-build-isolation
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
       

@@ -265,6 +265,39 @@ class TestModelInfoEndpoint:
         assert isinstance(data["is_loaded"], bool)
 
 
+class TestModelUnloadedScenarios:
+    """Tests when model is not loaded."""
+
+    def test_predict_returns_503_when_model_is_none(self, monkeypatch):
+        """Test that /predict returns 503 when model is None."""
+        from fastapi.testclient import TestClient
+
+        import app.main as main_mod
+
+        with TestClient(main_mod.app) as client:
+            monkeypatch.setattr(main_mod, "model", None)
+            res = client.post("/predict", json={"user_id": "196", "movie_id": "242"})
+            assert res.status_code == 503
+
+            res_batch = client.post(
+                "/predict/batch",
+                json={"predictions": [{"user_id": "196", "movie_id": "242"}]},
+            )
+            assert res_batch.status_code == 503
+
+    def test_startup_exception_handling(self, monkeypatch):
+        """Test startup event exception logging."""
+        import app.main as main_mod
+
+        def mock_init(*args, **kwargs):
+            raise RuntimeError("Startup fail test")
+
+        monkeypatch.setattr(main_mod, "MovieRatingModel", mock_init)
+        import asyncio
+
+        asyncio.run(main_mod.startup_event())
+
+
 # =============================================================================
 # Run tests
 # =============================================================================

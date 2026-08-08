@@ -116,12 +116,13 @@ Shared fixtures provide reusable test data:
 
 | Metric | Target | Current |
 |--------|--------|---------|
-| Overall code coverage | ≥ 80% | **86%** |
-| Unit test count | ≥ 20 | 31 |
-| Integration test count | ≥ 10 | 25 |
-| Data test count | ≥ 10 | 17 |
-| Model behavioral test count | ≥ 10 | 16 |
-| **Total tests** | ≥ 50 | **89** |
+| Overall code coverage | ≥ 80% | **93%** |
+| Unit test count | ≥ 20 | 33 |
+| Integration test count | ≥ 10 | 27 |
+| Data test count | ≥ 10 | 19 |
+| Model behavioral test count | ≥ 10 | 14 |
+| **Total tests** | ≥ 50 | **93** |
+
 
 ---
 

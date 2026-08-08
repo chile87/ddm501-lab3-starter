@@ -132,14 +132,15 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 | Category | Tests | Status |
 |----------|-------|--------|
-| Unit Tests (model) | 13 | ✅ All passing |
+| Unit Tests (model) | 15 | ✅ All passing |
 | Unit Tests (schemas) | 15 | ✅ All passing |
-| Integration Tests (API) | 20 | ✅ All passing |
-| Data Quality Tests | 14 | ✅ All passing |
-| Model Behavioral Tests | 16 | ✅ All passing |
-| **Total** | **89** | **✅ All passing** |
+| Integration Tests (API) | 22 | ✅ All passing |
+| Data Quality Tests | 19 | ✅ All passing |
+| Model Behavioral Tests | 22 | ✅ All passing |
+| **Total** | **93** | **✅ All passing** |
 
-### Code Coverage: **86%** (target: ≥ 80%)
+### Code Coverage: **93%** (target: ≥ 80%)
+
 
 ## Test Types
 

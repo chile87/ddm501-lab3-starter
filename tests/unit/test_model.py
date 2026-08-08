@@ -142,6 +142,25 @@ class TestModelFileHandling:
         with pytest.raises(FileNotFoundError):
             MovieRatingModel(model_path="/nonexistent/path/model.pkl")
 
+    def test_predict_raises_runtime_error_when_unloaded(self):
+        """Test that predict raises RuntimeError if model attribute is None."""
+        m = MovieRatingModel.__new__(MovieRatingModel)
+        m.model = None
+        with pytest.raises(RuntimeError):
+            m.predict("196", "242")
+        with pytest.raises(RuntimeError):
+            m.predict_batch([("196", "242")])
+
+    def test_singleton_get_and_reset_model(self):
+        """Test singleton get_model and reset_model functions."""
+        from app.model import get_model, reset_model
+
+        reset_model()
+        model1 = get_model()
+        model2 = get_model()
+        assert model1 is model2
+        reset_model()
+
 
 # =============================================================================
 # Run tests

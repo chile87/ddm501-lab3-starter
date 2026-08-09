@@ -21,27 +21,27 @@ ddm501-lab3-starter/
 │   ├── conftest.py         # Shared fixtures
 │   ├── unit/
 │   │   ├── __init__.py
-│   │   ├── test_model.py   # Model unit tests ✅
-│   │   └── test_schemas.py # Schema tests ✅
+│   │   ├── test_model.py   # Model unit tests
+│   │   └── test_schemas.py # Schema tests
 │   ├── integration/
 │   │   ├── __init__.py
-│   │   └── test_api.py     # API tests ✅
+│   │   └── test_api.py     # API tests
 │   ├── data/
 │   │   ├── __init__.py
-│   │   └── test_data_quality.py  # Data tests ✅
+│   │   └── test_data_quality.py  # Data tests
 │   └── model/
 │       ├── __init__.py
-│       └── test_model_behavior.py  # Behavioral tests ✅
+│       └── test_model_behavior.py  # Behavioral tests
 ├── docs/
-│   └── TESTING_STRATEGY.md # Testing strategy document ✅
+│   └── TESTING_STRATEGY.md # Testing strategy document
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml          # CI pipeline ✅
-│       └── cd.yml          # CD pipeline ✅
+│       ├── ci.yml          # CI pipeline
+│       └── cd.yml          # CD pipeline
 ├── scripts/
 │   └── train_model.py      # Model training script
 ├── models/                 # Saved models
-├── .pre-commit-config.yaml # Pre-commit hooks ✅
+├── .pre-commit-config.yaml # Pre-commit hooks
 ├── pyproject.toml          # Project configuration
 ├── requirements.txt
 ├── requirements-dev.txt    # Development dependencies
@@ -229,12 +229,3 @@ Below are execution screenshots demonstrating the test suite results, API functi
 ### 8. GitHub Actions CI/CD Workflow
 ![CI Pipeline Success](screenshots/ci-pipeline-success.png)
 * **Purpose**: Displays successful execution of the GitHub Actions CI pipeline across linting, type-checking, test execution, and Docker build steps.
-
-## Grading Rubric
-
-| Criteria | Weight | Status |
-|----------|--------|--------|
-| Test Coverage (unit, integration, data, model) | 30% | ✅ |
-| CI/CD Pipeline | 30% | ✅ |
-| Code Quality | 20% | ✅ |
-| Documentation | 20% | ✅ |

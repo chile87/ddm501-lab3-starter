@@ -268,6 +268,16 @@ class TestModelInfoEndpoint:
 class TestModelUnloadedScenarios:
     """Tests when model is not loaded."""
 
+    def test_health_returns_503_when_model_is_none(self, test_client, monkeypatch):
+        """An instance without a model must not report a successful health check."""
+        import app.main as main_mod
+
+        monkeypatch.setattr(main_mod, "model", None)
+        response = test_client.get("/health")
+
+        assert response.status_code == 503
+        assert response.json() == {"status": "unhealthy", "model_loaded": False}
+
     def test_predict_returns_503_when_model_is_none(self, monkeypatch):
         """Test that /predict returns 503 when model is None."""
         from fastapi.testclient import TestClient

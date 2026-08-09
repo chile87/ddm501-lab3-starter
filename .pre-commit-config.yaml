@@ -26,7 +26,7 @@ repos:
     rev: 23.12.1
     hooks:
       - id: black
-        language_version: python3.10
+        language_version: python3
         args: ['--line-length=100']
 
   # ===========================================================================
@@ -66,7 +66,10 @@ repos:
     hooks:
       - id: pytest
         name: pytest
-        entry: pytest tests/unit/ -v --tb=short
-        language: system
+        entry: pytest --confcutdir=tests/unit tests/unit/test_schemas.py -q --tb=short
+        language: python
+        additional_dependencies:
+          - pytest==7.4.3
+          - pydantic==2.5.2
         pass_filenames: false
         always_run: true

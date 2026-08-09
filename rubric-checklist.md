@@ -180,7 +180,7 @@ cat .github/workflows/ci.yml | grep -E "^  [a-z-]+:" | head -10
 - [ ] black pass — code format đúng chuẩn
 - [ ] isort pass — import sắp xếp đúng
 - [ ] mypy pass — type checking không lỗi
-- [ ] Tất cả 89 tests pass — không test nào fail
+- [ ] Tất cả 94 tests pass — không test nào fail
 - [ ] Coverage ≥ 80% — đạt ngưỡng yêu cầu
 
 **🔍 Cách kiểm tra:**
@@ -188,13 +188,13 @@ cat .github/workflows/ci.yml | grep -E "^  [a-z-]+:" | head -10
 ```bash
 source venv/bin/activate
 # Linting
-black --check app/ tests/
-flake8 app/ tests/ --max-line-length=100
-isort --check-only app/ tests/
+black --check app/ scripts/ tests/
+flake8 app/ scripts/ tests/ --max-line-length=100
+isort --check-only app/ scripts/ tests/
 # Type check
-mypy app/ --ignore-missing-imports
+mypy app/ scripts/ --ignore-missing-imports
 # Tests + Coverage
-pytest tests/ -v --cov=app --cov-report=term --tb=short
+pytest tests/ -v --cov=app --cov-report=term --cov-fail-under=80 --tb=short
 ```
 
 ---
@@ -210,6 +210,8 @@ pytest tests/ -v --cov=app --cov-report=term --tb=short
 - [ ] Deploy production environment (BONUS)
 - [ ] Sử dụng GitHub environments: `staging`, `production`
 - [ ] Tự động tạo GitHub Release
+- [ ] Model artifact được đưa vào Docker image và health check xác nhận model đã load
+- [ ] Có workflow rollback về image tag trước đó
 
 **🔍 Cách kiểm tra:**
 
@@ -316,7 +318,7 @@ grep -c "^##" docs/TESTING_STRATEGY.md  # ≥ 7 sections
 - [ ] Cách chạy API (`uvicorn app.main:app`)
 - [ ] CI badge (sau khi push lên GitHub)
 
-> ⚠️ **LƯU Ý:** CI badge hiện tại là placeholder — cần thay bằng link thật sau khi push lên GitHub.
+> CI badge đã trỏ đến workflow thật của repository `chile87/ddm501-lab3-starter`.
 
 **🔍 Cách kiểm tra:**
 
@@ -338,7 +340,7 @@ grep -c "^##" README.md  # ≥ 8 sections
 **🔍 Cách kiểm tra:**
 
 ```bash
-pytest tests/ -v --cov=app --cov-report=term --cov-report=html
+pytest tests/ -v --cov=app --cov-report=term --cov-report=html --cov-fail-under=80
 # Check the "TOTAL" line — must be ≥ 80%
 open htmlcov/index.html
 ```
@@ -395,22 +397,22 @@ echo -n "Hooks count: "; grep "- id:" .pre-commit-config.yaml | wc -l | tr -d ' 
 
 | Tiêu chí                       | Max   | Đánh giá                                                 |
 | ------------------------------ | ----- | -------------------------------------------------------- |
-| Unit Tests (model + schemas)   | 10%   | ✅ 31 tests (13 model + 18 schemas)                      |
-| Integration Tests (API)        | 8%    | ✅ 25 API endpoint tests                                 |
+| Unit Tests (model + schemas)   | 10%   | ✅ 33 tests (15 model + 18 schemas)                      |
+| Integration Tests (API)        | 8%    | ✅ 28 API endpoint tests                                 |
 | Data Quality Tests             | 6%    | ✅ 17 data quality tests                                 |
 | Model Behavioral Tests         | 6%    | ✅ 16 behavioral tests                                   |
 | **Test Coverage**              | **30%** | **~28-30%**                                            |
 | CI workflow works              | 12%   | ✅ 4 jobs (lint, type-check, test, build)                |
-| All checks pass                | 10%   | ✅ Black + Flake8 + isort + mypy + 89 tests ALL PASS      |
-| CD workflow configured         | 8%    | ✅ 3 jobs (build-push, deploy staging, deploy production) |
+| All checks pass                | 10%   | ✅ Black + Flake8 + isort + mypy + 94 tests ALL PASS      |
+| CD workflow configured         | 8%    | ✅ Validate, build/push, staging, production, release + rollback |
 | **CI/CD Pipeline**             | **30%** | **~28-30%**                                            |
 | Pre-commit hooks               | 8%    | ✅ 7 repo hooks + 2 local (pytest)                       |
 | Linting passes                 | 6%    | ✅ Black: 16 files unchanged, Flake8: OK, isort: OK       |
 | Type hints                     | 6%    | ✅ mypy: Success, no issues in 5 source files             |
 | **Code Quality**               | **20%** | **~19-20%**                                            |
 | Testing strategy doc           | 10%   | ✅ 7 sections chi tiết                                   |
-| README updated                 | 5%    | ✅ Đầy đủ sections + CI badge (placeholder)              |
-| Coverage report                | 5%    | ✅ 86% coverage (≥ 80% target)                           |
+| README updated                 | 5%    | ✅ Đầy đủ sections + CI badge thật                       |
+| Coverage report                | 5%    | ✅ ≥93% coverage; CI enforce 80% + upload artifact       |
 | **Documentation**              | **20%** | **~18-20%**                                            |
 | **TỔNG**                       | **100%** | **~93-100%** ⭐                                         |
 
@@ -419,9 +421,9 @@ echo -n "Hooks count: "; grep "- id:" .pre-commit-config.yaml | wc -l | tr -d ' 
 ## ✅ VERIFY KẾT QUẢ THỰC TẾ (đã chạy)
 
 ```
-=== Tests:        89 passed in 0.49s ===
-=== Coverage:     86% (TOTAL: 137 stmts, 19 miss) ===
-=== Black:        16 files would be left unchanged ===
+=== Tests:        94 passed ===
+=== Coverage:     ≥93% (required minimum: 80%) ===
+=== Black:        app/, scripts/, tests/ unchanged ===
 === Flake8:       OK ===
 === isort:        OK ===
 === mypy:         Success: no issues found in 5 source files ===
@@ -431,15 +433,17 @@ echo -n "Hooks count: "; grep "- id:" .pre-commit-config.yaml | wc -l | tr -d ' 
 
 ## ⚠️ NHỮNG THỨ CÒN THIẾU (cần làm trước khi nộp)
 
-- [ ] **Cập nhật CI badge** trong README.md — thay `<your-username>/<your-repo>` bằng repo thật
-- [ ] **Push code lên GitHub** — CI/CD cần GitHub repo để hoạt động
+- [x] **Cập nhật CI badge** trong README.md — đã dùng repo thật
+- [ ] **Push thay đổi mới lên GitHub** — CI/CD cần chạy lại trên commit hiện tại
+- [ ] **Cấu hình secrets/environments** — `DOCKER_USERNAME`, `DOCKER_PASSWORD`, `staging`, `production`
 - [ ] **Chụp screenshots** theo submission requirements:
   - Screenshot CI pipeline chạy thành công (tất cả jobs xanh)
-  - Screenshot test results (pytest output: 89 passed)
-  - Screenshot coverage report (86%)
+  - Screenshot test results (pytest output: 94 passed)
+  - Screenshot coverage report (≥93%) hoặc artifact `coverage-report`
+  - Screenshot CD pipeline chạy thành công từ một tag `v*`
   - Screenshot pre-commit hooks chạy thành công
 
-> **LƯU Ý:** Các check về code (tests, lint, type-check, coverage) đã **verify thành công 100%** tại local. Chỉ còn việc push lên GitHub và chụp CI screenshots.
+> **LƯU Ý:** Sau mỗi thay đổi test, hãy chạy lại local checks rồi dùng kết quả workflow mới nhất để chụp screenshots.
 
 ---
 
@@ -447,13 +451,14 @@ echo -n "Hooks count: "; grep "- id:" .pre-commit-config.yaml | wc -l | tr -d ' 
 
 | File                                | Trạng thái | Rubric liên quan |
 | ----------------------------------- | ---------- | ---------------- |
-| `tests/unit/test_model.py`          | ✅ 13 tests | Unit Tests 10%  |
+| `tests/unit/test_model.py`          | ✅ 15 tests | Unit Tests 10%  |
 | `tests/unit/test_schemas.py`        | ✅ 18 tests | Unit Tests 10%  |
-| `tests/integration/test_api.py`     | ✅ 25 tests | Integration 8%  |
+| `tests/integration/test_api.py`     | ✅ 28 tests | Integration 8%  |
 | `tests/data/test_data_quality.py`   | ✅ 17 tests | Data Tests 6%   |
 | `tests/model/test_model_behavior.py` | ✅ 16 tests | Behavioral 6%   |
 | `.github/workflows/ci.yml`          | ✅ 4 jobs   | CI/CD 30%       |
-| `.github/workflows/cd.yml`          | ✅ 3 jobs   | CI/CD 30%       |
+| `.github/workflows/cd.yml`          | ✅ 5 jobs   | CI/CD 30%       |
+| `.github/workflows/rollback.yml`    | ✅ 1 job    | CI/CD 30%       |
 | `.pre-commit-config.yaml`           | ✅ 9 hooks  | Code Quality 20% |
 | `docs/TESTING_STRATEGY.md`          | ✅ 204 dòng | Documentation 20% |
 | `README.md`                         | ✅ 201 dòng | Documentation 20% |
@@ -465,12 +470,12 @@ echo -n "Hooks count: "; grep "- id:" .pre-commit-config.yaml | wc -l | tr -d ' 
 | `app/config.py`                     | ✅ Hoàn chỉnh | -             |
 | `tests/conftest.py`                 | ✅ 8 fixtures | -             |
 | `scripts/train_model.py`            | ✅ Có sẵn    | -             |
-| `models/svd_model.pkl`              | ✅ 4.9 MB   | -             |
+| `models/svd_model.pkl`              | CI tạo artifact; không commit vào Git | - |
 
 ---
 
 ## 🚀 QUICK VERIFY COMMAND (1 dòng)
 
 ```bash
-cd ddm501-lab3-starter && source venv/bin/activate && pytest tests/ -v --cov=app --tb=short && black --check app/ tests/ && flake8 app/ tests/ --max-line-length=100 && isort --check-only app/ tests/ && mypy app/ --ignore-missing-imports && echo "✅ ALL CHECKS PASSED"
+cd ddm501-lab3-starter && source venv/bin/activate && pytest tests/ -v --cov=app --cov-fail-under=80 --tb=short && black --check app/ scripts/ tests/ && flake8 app/ scripts/ tests/ --max-line-length=100 && isort --check-only app/ scripts/ tests/ && mypy app/ scripts/ --ignore-missing-imports && echo "✅ ALL CHECKS PASSED"
 ```

@@ -37,7 +37,8 @@ ddm501-lab3-starter/
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml          # CI pipeline ✅
-│       └── cd.yml          # CD pipeline ✅
+│       ├── cd.yml          # CD pipeline ✅
+│       └── rollback.yml    # Production rollback ✅
 ├── scripts/
 │   └── train_model.py      # Model training script
 ├── models/                 # Saved models
@@ -78,7 +79,7 @@ python scripts/train_model.py
 pytest tests/ -v
 
 # Run with coverage
-pytest tests/ -v --cov=app --cov-report=html --cov-report=term-missing
+pytest tests/ -v --cov=app --cov-report=html --cov-report=term-missing --cov-fail-under=80
 
 # Run specific test category
 pytest tests/unit/ -v
@@ -98,10 +99,10 @@ pre-commit install
 pre-commit run --all-files
 
 # Individual tools
-black app/ tests/
-flake8 app/ tests/ --max-line-length=100
-isort app/ tests/
-mypy app/ --ignore-missing-imports
+black app/ scripts/ tests/
+flake8 app/ scripts/ tests/ --max-line-length=100
+isort app/ scripts/ tests/
+mypy app/ scripts/ --ignore-missing-imports
 ```
 
 ### 5. Run the API
@@ -113,15 +114,16 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ## Completed Tasks
 
 ### Test Files
-- [x] `tests/unit/test_model.py` — 13 unit tests for model class
-- [x] `tests/unit/test_schemas.py` — 15 schema validation tests
-- [x] `tests/integration/test_api.py` — 20 API endpoint tests
-- [x] `tests/data/test_data_quality.py` — 14 data quality tests
+- [x] `tests/unit/test_model.py` — 15 unit tests for model class
+- [x] `tests/unit/test_schemas.py` — 18 schema validation tests
+- [x] `tests/integration/test_api.py` — 28 API endpoint tests
+- [x] `tests/data/test_data_quality.py` — 17 data quality tests
 - [x] `tests/model/test_model_behavior.py` — 16 behavioral tests
 
 ### CI/CD Files
-- [x] `.github/workflows/ci.yml` — CI pipeline (lint → type-check → test → build)
-- [x] `.github/workflows/cd.yml` — CD pipeline (build → push → deploy)
+- [x] `.github/workflows/ci.yml` — CI pipeline (lint → type-check → test → artifact → build)
+- [x] `.github/workflows/cd.yml` — CD pipeline (validate → build/push → staging → production)
+- [x] `.github/workflows/rollback.yml` — Manual rollback to a previous versioned image
 - [x] `.pre-commit-config.yaml` — Pre-commit hooks (black, isort, flake8, mypy, pytest)
 
 ### Documentation
@@ -133,13 +135,26 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | Category | Tests | Status |
 |----------|-------|--------|
 | Unit Tests (model) | 15 | ✅ All passing |
-| Unit Tests (schemas) | 15 | ✅ All passing |
-| Integration Tests (API) | 22 | ✅ All passing |
-| Data Quality Tests | 19 | ✅ All passing |
-| Model Behavioral Tests | 22 | ✅ All passing |
-| **Total** | **93** | **✅ All passing** |
+| Unit Tests (schemas) | 18 | ✅ All passing |
+| Integration Tests (API) | 28 | ✅ All passing |
+| Data Quality Tests | 17 | ✅ All passing |
+| Model Behavioral Tests | 16 | ✅ All passing |
+| **Total** | **94** | **✅ All passing** |
 
-### Code Coverage: **93%** (target: ≥ 80%)
+### Code Coverage: **≥ 93%** (enforced target: ≥ 80%)
+
+### Verification Screenshots
+
+| Evidence | Screenshot |
+|----------|------------|
+| API health and loaded model | [`api-health-success.png`](screenshots/api-health-success.png) |
+| Swagger API endpoints | [`swagger-api-success.png`](screenshots/swagger-api-success.png) |
+| Successful prediction (HTTP 200) | [`api-predict-success.png`](screenshots/api-predict-success.png) |
+| Coverage report (94%) | [`coverage-report-success.png`](screenshots/coverage-report-success.png) |
+| JUnit result (94 tests, 0 failures) | [`test-results-94-pass.png`](screenshots/test-results-94-pass.png) |
+
+The GitHub Actions screenshots must be refreshed after pushing this revision and completing the
+new CI/CD workflows; the repository is private and requires an authenticated GitHub session.
 
 
 ## Test Types
@@ -184,10 +199,23 @@ def test_same_input_same_output(model):
 
 ### Continuous Integration
 - Runs on every push and pull request
-- Executes linting, type checking, and tests
-- Reports code coverage
+- Executes linting, type checking, data validation, model training, and tests
+- Enforces at least 80% coverage and uploads HTML/XML coverage artifacts
+- Passes the trained model artifact to the Docker build job
+- Fails unless the container reports `healthy` with `model_loaded=true`
 
 ### Continuous Deployment
 - Triggered on version tags (`v*`)
-- Builds and pushes Docker image
-- Deploys to staging/production
+- Re-runs validation and builds a versioned Docker image containing the trained model
+- Verifies the versioned image in the `staging` environment
+- Promotes a verified version to `latest` in the `production` environment
+- Creates a GitHub Release only after production verification succeeds
+
+Required repository secrets: `DOCKER_USERNAME` and `DOCKER_PASSWORD`. Configure approval
+rules for the GitHub `production` environment before creating a release tag.
+
+### Rollback
+
+Run the **Rollback Production** workflow manually and provide an existing semantic image tag,
+such as `v1.0.0`. The workflow verifies that image, promotes it back to `latest`, and runs a
+model-backed health check.

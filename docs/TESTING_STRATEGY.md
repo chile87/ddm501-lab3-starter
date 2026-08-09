@@ -53,10 +53,11 @@ The pyramid ensures we catch bugs at every layer — from low-level function cor
 | `test_api.py` | All FastAPI endpoints — health, root, predict, batch predict, model info, error handling |
 
 **Key assertions:**
-- Correct HTTP status codes (200, 404, 405, 422)
+- Correct HTTP status codes (200, 404, 405, 422, 503)
 - Response JSON contains expected fields
 - Predicted ratings are within valid range
 - Invalid requests return proper error responses
+- An API without a loaded model reports HTTP 503 instead of a false-positive health check
 
 ### 2.3 Data Quality Tests (`tests/data/`)
 
@@ -118,10 +119,10 @@ Shared fixtures provide reusable test data:
 |--------|--------|---------|
 | Overall code coverage | ≥ 80% | **93%** |
 | Unit test count | ≥ 20 | 33 |
-| Integration test count | ≥ 10 | 27 |
-| Data test count | ≥ 10 | 19 |
-| Model behavioral test count | ≥ 10 | 14 |
-| **Total tests** | ≥ 50 | **93** |
+| Integration test count | ≥ 10 | 28 |
+| Data test count | ≥ 10 | 17 |
+| Model behavioral test count | ≥ 10 | 16 |
+| **Total tests** | ≥ 50 | **94** |
 
 
 ---
@@ -141,19 +142,27 @@ Push / PR → CI Pipeline
               │
               ├── Test Job (depends on lint + type-check)
               │   ├── Install dependencies
+              │   ├── Validate data before training
               │   ├── Train model
-              │   ├── Run pytest with coverage
-              │   └── Upload coverage report
+              │   ├── Run pytest with enforced coverage
+              │   └── Upload coverage + trained model artifacts
               │
               └── Build Job (depends on test)
+                  ├── Download trained model artifact
                   ├── Build Docker image
-                  └── Smoke test container
+                  └── Require a healthy, model-backed container
 
 Tag (v*) → CD Pipeline
               │
-              ├── Build and Push Docker Image
-              ├── Deploy to Staging
-              └── Deploy to Production
+              ├── Validate release + train model
+              ├── Build and push versioned image
+              ├── Verify versioned image in staging
+              ├── Promote verified image to production/latest
+              └── Create GitHub Release
+
+Manual rollback → Select an existing version tag
+                  ├── Promote that image back to latest
+                  └── Verify model-backed production health
 ```
 
 ---
@@ -165,7 +174,7 @@ Tag (v*) → CD Pipeline
 pytest tests/ -v
 
 # Run with coverage
-pytest tests/ -v --cov=app --cov-report=html --cov-report=term-missing
+pytest tests/ -v --cov=app --cov-report=html --cov-report=term-missing --cov-fail-under=80
 
 # Run specific test category
 pytest tests/unit/ -v           # Unit tests only

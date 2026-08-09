@@ -1,8 +1,3 @@
-# =============================================================================
-# CI Pipeline for Movie Rating API
-# DDM501 - Lab 3: Testing & CI/CD
-# =============================================================================
-
 name: CI Pipeline
 
 on:
@@ -11,65 +6,58 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
-  # ===========================================================================
-  # Linting Job
-  # ===========================================================================
   lint:
     name: Lint Code
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
-      
+          python-version: "3.10"
+
       - name: Cache pip dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements*.txt') }}
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install flake8 black isort
-      
-      - name: Run flake8
-        run: flake8 app/ tests/ --max-line-length=100 --exclude=__pycache__,venv
-      
-      - name: Check black formatting
-        run: black --check app/ tests/
-      
-      - name: Check import sorting
-        run: isort --check-only app/ tests/
 
-  # ===========================================================================
-  # Type Checking Job
-  # ===========================================================================
+      - name: Install lint tools
+        run: pip install black==23.12.1 flake8==7.0.0 isort==5.13.2
+
+      - name: Run Flake8
+        run: flake8 app/ scripts/ tests/ --max-line-length=100 --exclude=__pycache__,venv
+
+      - name: Check Black formatting
+        run: black --check app/ scripts/ tests/
+
+      - name: Check import sorting
+        run: isort --check-only app/ scripts/ tests/
+
   type-check:
     name: Type Check
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
-      
+          python-version: "3.10"
+
       - name: Cache pip dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements*.txt') }}
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -77,34 +65,30 @@ jobs:
           pip install numpy==1.26.2
           pip install scikit-surprise==1.1.3 --no-build-isolation --no-deps
           pip install -r requirements.txt
-          pip install mypy types-requests
-      
-      - name: Run mypy
-        run: mypy app/ --ignore-missing-imports
+          pip install mypy==1.8.0 types-requests==2.31.0
 
-  # ===========================================================================
-  # Test Job
-  # ===========================================================================
+      - name: Run mypy
+        run: mypy app/ scripts/ --ignore-missing-imports
+
   test:
     name: Run Tests
     runs-on: ubuntu-latest
     needs: [lint, type-check]
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
-      
+          python-version: "3.10"
+
       - name: Cache pip dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements*.txt') }}
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -113,37 +97,61 @@ jobs:
           pip install scikit-surprise==1.1.3 --no-build-isolation --no-deps
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-      
+
+      - name: Validate data before training
+        run: pytest tests/data/ -v
+
       - name: Train model
         run: echo y | python scripts/train_model.py
-      
-      - name: Run tests
-        run: pytest tests/ -v --cov=app --cov-report=xml --cov-report=html
-      
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
-          fail_ci_if_error: false
 
-  # ===========================================================================
-  # Build Job (BONUS)
-  # ===========================================================================
+      - name: Run tests with enforced coverage
+        run: >-
+          pytest tests/ -v --cov=app --cov-report=term-missing
+          --cov-report=xml --cov-report=html --cov-fail-under=80
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            htmlcov/
+          if-no-files-found: error
+
+      - name: Upload trained model
+        uses: actions/upload-artifact@v4
+        with:
+          name: trained-model
+          path: models/svd_model.pkl
+          if-no-files-found: error
+          retention-days: 7
+
   build:
-    name: Build Docker Image
+    name: Build and Verify Docker Image
     runs-on: ubuntu-latest
     needs: [test]
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
+      - name: Download trained model
+        uses: actions/download-artifact@v4
+        with:
+          name: trained-model
+          path: models
+
       - name: Build Docker image
         run: docker build -t movie-rating-api:test .
-      
-      - name: Test Docker image
+
+      - name: Start Docker container
+        run: docker run -d -p 8000:8000 --name test-api movie-rating-api:test
+
+      - name: Verify healthy model-backed API
         run: |
-          docker run -d -p 8000:8000 --name test-api movie-rating-api:test
-          sleep 10
-          curl http://localhost:8000/health
-          docker stop test-api
+          curl --fail --retry 10 --retry-delay 2 --retry-connrefused http://localhost:8000/health
+          curl --fail --silent http://localhost:8000/health |
+            python -c 'import json, sys; data=json.load(sys.stdin); assert data == {"status": "healthy", "model_loaded": True}'
+
+      - name: Stop Docker container
+        if: always()
+        run: docker rm -f test-api

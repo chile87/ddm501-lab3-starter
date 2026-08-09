@@ -5,7 +5,7 @@ FastAPI application for Movie Rating Prediction.
 import logging
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import API_DESCRIPTION, API_TITLE, API_VERSION, MODEL_VERSION
@@ -43,7 +43,7 @@ model: Optional[MovieRatingModel] = None
 
 
 @app.on_event("startup")
-async def startup_event():
+async def startup_event() -> None:
     """Load model when application starts."""
     global model
     try:
@@ -54,7 +54,7 @@ async def startup_event():
 
 
 @app.get("/", tags=["Info"])
-async def root():
+async def root() -> dict[str, str]:
     """Root endpoint with API information."""
     return {
         "name": API_TITLE,
@@ -66,20 +66,23 @@ async def root():
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
-async def health_check():
+async def health_check(response: Response) -> HealthResponse:
     """
     Health check endpoint.
 
     Returns the health status of the API and whether the model is loaded.
     """
+    model_loaded = model is not None and model.is_loaded()
+    if not model_loaded:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+
     return HealthResponse(
-        status="healthy" if model and model.is_loaded() else "unhealthy",
-        model_loaded=model is not None and model.is_loaded(),
+        status="healthy" if model_loaded else "unhealthy", model_loaded=model_loaded
     )
 
 
 @app.post("/predict", response_model=PredictionResponse, tags=["Prediction"])
-async def predict(request: PredictionRequest):
+async def predict(request: PredictionRequest) -> PredictionResponse:
     """
     Predict movie rating for a user.
 
@@ -106,7 +109,7 @@ async def predict(request: PredictionRequest):
 
 
 @app.post("/predict/batch", response_model=BatchPredictionResponse, tags=["Prediction"])
-async def predict_batch(request: BatchPredictionRequest):
+async def predict_batch(request: BatchPredictionRequest) -> BatchPredictionResponse:
     """
     Predict movie ratings for multiple user-movie pairs.
 
@@ -138,7 +141,7 @@ async def predict_batch(request: BatchPredictionRequest):
 
 
 @app.get("/model/info", tags=["Info"])
-async def model_info():
+async def model_info() -> dict[str, str | bool]:
     """Get information about the loaded model."""
     return {
         "model_version": MODEL_VERSION,

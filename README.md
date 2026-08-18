@@ -1,7 +1,22 @@
 # Lab 3: Testing & CI/CD for ML Systems
 
 ![CI Pipeline](https://github.com/chile87/ddm501-lab3-starter/actions/workflows/ci.yml/badge.svg)
+## General Information
 
+**Lecturer**: Huynh Cong Viet Ngu
+
+**Group**: Group 4
+ 
+**Member List**
+ 
+| Full name | MSSV | Role |
+|--------|------|---------|
+| Lê Thị Kim Chi | 25MS23290 | Team lead |
+| Trương Quốc Khánh | 25MS23285 | Member |
+| Trương Sỹ Quảng | 25MS23286 | Member  |
+| Nguyễn Việt Anh Minh | 25MS23275 | Member |
+ 
+---
 ## Overview
 
 Implement comprehensive testing strategies and CI/CD pipelines for the movie rating prediction system to ensure quality and automate deployment.
@@ -48,10 +63,19 @@ ddm501-lab3-starter/
 ├── Dockerfile
 └── README.md
 ```
+## Prerequisites
 
-## Quick Start
+| Tool | Version |
+|------|---------|
+| Python | 3.10+ |
+| Docker & Docker Compose | 24+ |
+| pip | latest |
 
-### 1. Clone and Setup
+---
+
+## Implemetantion Guide
+
+### 1. Clone and set up the environment
 
 ```bash
 cd ddm501-lab3-starter
